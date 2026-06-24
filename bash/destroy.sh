@@ -28,8 +28,7 @@ echo ""
 echo "Target resources (tag managed_by=cli):"
 az resource list \
   --resource-group "$RG" \
-  --tag managed_by=cli \
-  --query "[].{Name:name, Type:type}" \
+  --query "[?tags.managed_by=='cli'].{Name:name, Type:type}" \
   --output table
 
 echo ""
@@ -110,8 +109,7 @@ echo ""
 echo "Remaining resources with tag managed_by=cli:"
 REMAINING=$(az resource list \
   --resource-group "$RG" \
-  --tag managed_by=cli \
-  --query "length(@)")
+  --query "length([?tags.managed_by=='cli'])")
 
 if [ "$REMAINING" -eq "0" ]; then
   echo "✅ No CLI resources remaining"
@@ -119,8 +117,7 @@ else
   echo "⚠️  ${REMAINING} resource(s) not deleted — check manually"
   az resource list \
     --resource-group "$RG" \
-    --tag managed_by=cli \
-    --query "[].{Name:name, Type:type}" \
+    --query "[?tags.managed_by=='cli'].{Name:name, Type:type}" \
     --output table
 fi
 
