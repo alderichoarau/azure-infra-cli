@@ -44,6 +44,19 @@ if ($LASTEXITCODE -eq 0) {
     Write-Output "[SKIP] Function App not found"
 }
 
+# -- 1b. Application Insights (auto-created with Function App) -----------------
+Write-Output "> Deleting Application Insights..."
+az monitor app-insights component show --app "fn-$Owner-cli" --resource-group $RG *>$null
+if ($LASTEXITCODE -eq 0) {
+    az monitor app-insights component delete `
+        --app            "fn-$Owner-cli" `
+        --resource-group $RG `
+        --yes
+    Write-Output "[OK] Application Insights deleted"
+} else {
+    Write-Output "[SKIP] Application Insights not found"
+}
+
 # -- 2. Web App ----------------------------------------------------------------
 Write-Output "> Deleting App Service..."
 az webapp show --name "app-$Owner-cli" --resource-group $RG *>$null
