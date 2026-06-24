@@ -34,7 +34,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Derive OWNER from resource group name
-        run: echo "OWNER=${RESOURCE_GROUP#rg-}" >> $GITHUB_ENV
+        run: echo "OWNER=${RESOURCE_GROUP#rg-}" >> "$GITHUB_ENV"
 
       - name: Verify Resource Group exists
         run: |

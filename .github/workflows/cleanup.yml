@@ -35,7 +35,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Derive OWNER from resource group name
-        run: echo "OWNER=${RESOURCE_GROUP#rg-}" >> $GITHUB_ENV
+        run: echo "OWNER=${RESOURCE_GROUP#rg-}" >> "$GITHUB_ENV"
 
       - name: Delete resources tagged managed_by=cli
         run: bash bash/destroy.sh
@@ -43,9 +43,11 @@ jobs:
       - name: Cleanup summary
         if: always()
         run: |
-          echo "## Friday Evening Cleanup" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Owner** : $OWNER" >> $GITHUB_STEP_SUMMARY
-          echo "- **Resource Group** : $RESOURCE_GROUP" >> $GITHUB_STEP_SUMMARY
-          echo "- **Target tag** : \`managed_by=cli\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Terraform resources** : not affected (\`managed_by=terraform\`)" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Friday Evening Cleanup"
+            echo ""
+            echo "- **Owner** : $OWNER"
+            echo "- **Resource Group** : $RESOURCE_GROUP"
+            echo "- **Target tag** : \`managed_by=cli\`"
+            echo "- **Terraform resources** : not affected (\`managed_by=terraform\`)"
+          } >> "$GITHUB_STEP_SUMMARY"
