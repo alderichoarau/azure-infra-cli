@@ -22,11 +22,11 @@ $Location = "francecentral"
 # Tags applied to all resources — used by destroy.ps1
 $Tags = @("managed_by=cli", "environment=tp", "owner=$Owner")
 
-Write-Output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Output "----------------------------------------------------"
 Write-Output "  Azure Provisioning -- owner: $Owner"
 Write-Output "  Resource Group : $RG"
 Write-Output "  Region         : $Location"
-Write-Output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Output "----------------------------------------------------"
 
 # ── 1. Business Storage Account ───────────────────────────────────────────────
 Write-Output ""
@@ -177,7 +177,7 @@ if ($LASTEXITCODE -eq 0) {
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 Write-Output ""
-Write-Output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Output "----------------------------------------------------"
 Write-Output "  Provisioning complete"
 Write-Output ""
 Write-Output "  Storage Account  : $SAName"
@@ -185,4 +185,4 @@ Write-Output "  App Service      : https://$AppUrl"
 Write-Output "  Function App     : https://$FnUrl"
 Write-Output "  Static Web App   : https://$StappUrl"
 Write-Output "  Container ACI    : http://$AciFqdn"
-Write-Output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Output "----------------------------------------------------"

@@ -16,11 +16,11 @@ $ErrorActionPreference = "Stop"
 $Owner = if ($env:OWNER) { $env:OWNER } else { "firstname-lastname" }
 $RG    = if ($env:RESOURCE_GROUP) { $env:RESOURCE_GROUP } else { "rg-$Owner" }
 
-Write-Output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Output "----------------------------------------------------"
 Write-Output "  Azure Cleanup -- owner: $Owner"
 Write-Output "  Resource Group : $RG"
 Write-Output "  Target tag     : managed_by=cli"
-Write-Output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Output "----------------------------------------------------"
 
 # List the resources that will be deleted before starting
 Write-Output ""
@@ -127,7 +127,7 @@ if ($Remaining -eq 0) {
 }
 
 Write-Output ""
-Write-Output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Output "----------------------------------------------------"
 Write-Output "  Cleanup complete -- Resource Group preserved"
 Write-Output "  Terraform resources were not affected"
-Write-Output "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+Write-Output "----------------------------------------------------"
