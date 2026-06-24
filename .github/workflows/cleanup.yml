@@ -1,12 +1,13 @@
 name: Friday Evening Cleanup
+run-name: "Cleanup — ${{ github.event.inputs.resource_group || 'scheduled' }}"
 
 on:
   schedule:
     - cron: '0 18 * * 5'   # Friday 18:00 UTC = 20:00 Paris (summer time)
   workflow_dispatch:         # manual trigger if needed
     inputs:
-      owner:
-        description: "Your firstname-lastname (e.g. alderic-hoarau) — leave empty to use the secret"
+      resource_group:
+        description: "Your resource group name (e.g. rg-alderic-hoarau) — leave empty to use the secret"
         required: false
         type: string
 
@@ -15,8 +16,7 @@ permissions:
   contents: read
 
 env:
-  OWNER:          ${{ github.event.inputs.owner || secrets.AZURE_OWNER }}
-  RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  RESOURCE_GROUP: ${{ github.event.inputs.resource_group || secrets.AZURE_RESOURCE_GROUP }}
 
 jobs:
   cleanup:
@@ -33,6 +33,9 @@ jobs:
           client-id:       ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id:       ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Derive OWNER from resource group name
+        run: echo "OWNER=${RESOURCE_GROUP#rg-}" >> $GITHUB_ENV
 
       - name: Delete resources tagged managed_by=cli
         run: bash bash/destroy.sh
