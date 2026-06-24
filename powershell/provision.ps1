@@ -98,13 +98,12 @@ $SAFnName = "stfn$($Owner -replace '-', '')"
 $TagsFn   = $Tags + @("purpose=function-storage")
 
 az storage account create `
-    --name                  $SAFnName `
-    --resource-group        $RG `
-    --location              $Location `
-    --sku                   Standard_LRS `
-    --public-network-access Disabled `
-    --min-tls-version       TLS1_2 `
-    --tags                  @TagsFn
+    --name            $SAFnName `
+    --resource-group  $RG `
+    --location        $Location `
+    --sku             Standard_LRS `
+    --min-tls-version TLS1_2 `
+    --tags            @TagsFn
 
 az functionapp create `
     --name            "fn-$Owner-cli" `
