@@ -1,7 +1,7 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# destroy.ps1 — Delete Azure resources tagged managed_by=cli
+# ------------------------------------------------------------------------------
+# destroy.ps1 - Delete Azure resources tagged managed_by=cli
 #
-# Does NOT delete the Resource Group — only CLI-managed resources
+# Does NOT delete the Resource Group - only CLI-managed resources
 # Terraform resources (managed_by=terraform) are never touched
 #
 # Deletion order matters (Azure dependencies):
@@ -9,7 +9,7 @@
 #   2. Storage Accounts                                     <- independent
 #
 # Note: App Service Plan is intentionally NOT deleted
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 
 $ErrorActionPreference = "Stop"
 
@@ -32,7 +32,7 @@ az resource list `
 
 Write-Output ""
 
-# ── 1. Function App ───────────────────────────────────────────────────────────
+# -- 1. Function App -----------------------------------------------------------
 Write-Output "> Deleting Function App..."
 az functionapp show --name "fn-$Owner-cli" --resource-group $RG *>$null
 if ($LASTEXITCODE -eq 0) {
@@ -44,7 +44,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Output "[SKIP] Function App not found"
 }
 
-# ── 2. Web App ────────────────────────────────────────────────────────────────
+# -- 2. Web App ----------------------------------------------------------------
 Write-Output "> Deleting App Service..."
 az webapp show --name "app-$Owner-cli" --resource-group $RG *>$null
 if ($LASTEXITCODE -eq 0) {
@@ -56,7 +56,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Output "[SKIP] App Service not found"
 }
 
-# ── 3. Container ACI ──────────────────────────────────────────────────────────
+# -- 3. Container ACI ----------------------------------------------------------
 Write-Output "> Deleting Container ACI..."
 az container show --name "aci-$Owner-cli" --resource-group $RG *>$null
 if ($LASTEXITCODE -eq 0) {
@@ -69,7 +69,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Output "[SKIP] Container ACI not found"
 }
 
-# ── 4. Static Web App ─────────────────────────────────────────────────────────
+# -- 4. Static Web App ---------------------------------------------------------
 Write-Output "> Deleting Static Web App..."
 az staticwebapp show --name "stapp-$Owner-cli" --resource-group $RG *>$null
 if ($LASTEXITCODE -eq 0) {
@@ -82,7 +82,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Output "[SKIP] Static Web App not found"
 }
 
-# ── 5. Storage Accounts ───────────────────────────────────────────────────────
+# -- 5. Storage Accounts -------------------------------------------------------
 Write-Output "> Deleting Storage Accounts..."
 
 $SAName = "st$($Owner -replace '-', '')cli"
@@ -109,7 +109,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Output "[SKIP] $SAFnName not found"
 }
 
-# ── Final check ───────────────────────────────────────────────────────────────
+# -- Final check ---------------------------------------------------------------
 Write-Output ""
 Write-Output "Remaining resources with tag managed_by=cli:"
 $Remaining = az resource list `

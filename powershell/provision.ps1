@@ -1,5 +1,5 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# provision.ps1 — Create Azure resources via az CLI
+# ------------------------------------------------------------------------------
+# provision.ps1 - Create Azure resources via az CLI
 #
 # Resources created:
 #   - Storage Account
@@ -9,17 +9,17 @@
 #   - Azure Container Instance (ACI)
 #
 # All resources are tagged managed_by=cli for the Friday cleanup
-# ──────────────────────────────────────────────────────────────────────────────
+# ------------------------------------------------------------------------------
 
 $ErrorActionPreference = "Stop"
 
-# ── Variables ─────────────────────────────────────────────────────────────────
+# -- Variables -----------------------------------------------------------------
 $Owner    = if ($env:OWNER) { $env:OWNER } else { "firstname-lastname" }
 $RG       = if ($env:RESOURCE_GROUP) { $env:RESOURCE_GROUP } else { "rg-$Owner" }
 $RGShared = "rg-shared-prf2026"
 $Location = "francecentral"
 
-# Tags applied to all resources — used by destroy.ps1
+# Tags applied to all resources - used by destroy.ps1
 $Tags = @("managed_by=cli", "environment=tp", "owner=$Owner")
 
 Write-Output "----------------------------------------------------"
@@ -28,7 +28,7 @@ Write-Output "  Resource Group : $RG"
 Write-Output "  Region         : $Location"
 Write-Output "----------------------------------------------------"
 
-# ── 1. Business Storage Account ───────────────────────────────────────────────
+# -- 1. Business Storage Account -----------------------------------------------
 Write-Output ""
 Write-Output "> [1/5] Storage Account..."
 
@@ -46,7 +46,7 @@ az storage account create `
 
 Write-Output "[OK] Storage Account created: $SAName"
 
-# ── 2. App Service (Python Web App) ───────────────────────────────────────────
+# -- 2. App Service (Python Web App) -------------------------------------------
 # Resolve the full resource ID of the shared plan (lives in a different resource group)
 $AppPlan = az appservice plan show `
     --name           "plan-npr-prf2026" `
@@ -76,11 +76,11 @@ $AppUrl = az webapp show `
 
 Write-Output "[OK] App Service created: https://$AppUrl"
 
-# ── 3. Python Function App ────────────────────────────────────────────────────
+# -- 3. Python Function App ----------------------------------------------------
 Write-Output ""
 Write-Output "> [3/5] Function App (dedicated Storage + shared plan)..."
 
-# Storage account dedicated to Functions (required — separate from business storage)
+# Storage account dedicated to Functions (required - separate from business storage)
 $SAFnName = "stfn$($Owner -replace '-', '')"
 $TagsFn   = $Tags + @("purpose=function-storage")
 
@@ -108,7 +108,7 @@ $FnUrl = az functionapp show `
 
 Write-Output "[OK] Function App created: https://$FnUrl"
 
-# ── 4. Static Web App ─────────────────────────────────────────────────────────
+# -- 4. Static Web App ---------------------------------------------------------
 Write-Output ""
 Write-Output "> [4/5] Static Web App..."
 
@@ -135,7 +135,7 @@ $StappUrl = az staticwebapp show `
 
 Write-Output "[OK] Static Web App created: https://$StappUrl"
 
-# ── 5. Azure Container Instance (ACI) ─────────────────────────────────────────
+# -- 5. Azure Container Instance (ACI) -----------------------------------------
 Write-Output ""
 Write-Output "> [5/5] Azure Container Instance (nginx)..."
 
@@ -175,7 +175,7 @@ if ($LASTEXITCODE -eq 0) {
     $AciFqdn = "N/A"
 }
 
-# ── Summary ───────────────────────────────────────────────────────────────────
+# -- Summary -------------------------------------------------------------------
 Write-Output ""
 Write-Output "----------------------------------------------------"
 Write-Output "  Provisioning complete"
