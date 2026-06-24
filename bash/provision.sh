@@ -116,10 +116,13 @@ echo "▶ [4/5] Static Web App..."
 az staticwebapp create \
   --name           "stapp-${OWNER}-cli" \
   --resource-group "$RG" \
-  --location       "westeurope" \
-  --tags           $TAGS
-
-# Note: Static Web App is not available in francecentral → westeurope
+  --location       "$LOCATION"
+# az staticwebapp create does not support --tags, so we tag the resource after creation
+az resource tag \
+  --resource-group  "$RG" \
+  --name            "stapp-${OWNER}-cli" \
+  --resource-type   "Microsoft.Web/staticSites" \
+  --tags            $TAGS
 
 STAPP_URL=$(az staticwebapp show \
   --name           "stapp-${OWNER}-cli" \
