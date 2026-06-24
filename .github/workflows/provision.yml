@@ -1,5 +1,5 @@
 name: Provision Azure Resources
-run-name: "Provision — ${{ github.event.inputs.resource_group }}"
+run-name: "Provision — ${{ github.event.inputs.resource_group }} (${{ github.event.inputs.shell }})"
 
 on:
   workflow_dispatch:
@@ -8,6 +8,14 @@ on:
         description: "Your resource group name (e.g. rg-alderic-hoarau)"
         required: true
         type: string
+      shell:
+        description: "Script to use"
+        required: true
+        type: choice
+        options:
+          - bash
+          - powershell
+        default: bash
 
 permissions:
   id-token: write
@@ -45,5 +53,11 @@ jobs:
           fi
           echo "✅ Resource Group found: $RESOURCE_GROUP"
 
-      - name: Provision resources
+      - name: Provision resources (bash)
+        if: github.event.inputs.shell == 'bash'
         run: bash bash/provision.sh
+
+      - name: Provision resources (powershell)
+        if: github.event.inputs.shell == 'powershell'
+        shell: pwsh
+        run: pwsh powershell/provision.ps1

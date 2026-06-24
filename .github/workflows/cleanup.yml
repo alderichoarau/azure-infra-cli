@@ -1,5 +1,5 @@
 name: Friday Evening Cleanup
-run-name: "Cleanup — ${{ github.event.inputs.resource_group || 'scheduled' }}"
+run-name: "Cleanup — ${{ github.event.inputs.resource_group || 'scheduled' }} (${{ github.event.inputs.shell || 'bash' }})"
 
 on:
   schedule:
@@ -10,6 +10,14 @@ on:
         description: "Your resource group name (e.g. rg-alderic-hoarau) — leave empty to use the secret"
         required: false
         type: string
+      shell:
+        description: "Script to use"
+        required: false
+        type: choice
+        options:
+          - bash
+          - powershell
+        default: bash
 
 permissions:
   id-token: write
@@ -37,8 +45,14 @@ jobs:
       - name: Derive OWNER from resource group name
         run: echo "OWNER=${RESOURCE_GROUP#rg-}" >> "$GITHUB_ENV"
 
-      - name: Delete resources tagged managed_by=cli
+      - name: Delete resources tagged managed_by=cli (bash)
+        if: github.event.inputs.shell != 'powershell'
         run: bash bash/destroy.sh
+
+      - name: Delete resources tagged managed_by=cli (powershell)
+        if: github.event.inputs.shell == 'powershell'
+        shell: pwsh
+        run: pwsh powershell/destroy.ps1
 
       - name: Cleanup summary
         if: always()
