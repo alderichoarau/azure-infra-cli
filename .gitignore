@@ -1,0 +1,19 @@
+# Azure CLI
+.azure/
+
+# Environment variables / secrets
+.env
+.env.*
+*.env
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# PowerShell
+*.ps1xml
+
+# Logs
+*.log
