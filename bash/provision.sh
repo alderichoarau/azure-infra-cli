@@ -148,6 +148,7 @@ az container create \
   --ports          80 \
   --ip-address     Public \
   --dns-name-label "aci-${OWNER}-cli" \
+  --os-type        Linux \
   --environment-variables OWNER="${OWNER}" ENVIRONMENT="tp"
 
 # az container create does not support --tags, so we tag the resource after creation
