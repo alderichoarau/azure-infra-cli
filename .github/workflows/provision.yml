@@ -17,9 +17,7 @@ on:
           - powershell
         default: bash
 
-permissions:
-  id-token: write
-  contents: read
+permissions: {}
 
 env:
   ARM_USE_OIDC:   "true"
@@ -29,6 +27,9 @@ jobs:
   provision:
     name: Create Azure Resources
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout

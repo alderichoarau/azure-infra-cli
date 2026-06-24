@@ -19,9 +19,7 @@ on:
           - powershell
         default: bash
 
-permissions:
-  id-token: write
-  contents: read
+permissions: {}
 
 env:
   RESOURCE_GROUP: ${{ github.event.inputs.resource_group || secrets.AZURE_RESOURCE_GROUP }}
@@ -30,6 +28,9 @@ jobs:
   cleanup:
     name: Delete CLI resources
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout

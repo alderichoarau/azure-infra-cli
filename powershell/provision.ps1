@@ -42,6 +42,8 @@ az storage account create `
     --sku                     Standard_LRS `
     --kind                    StorageV2 `
     --allow-blob-public-access false `
+    --public-network-access   Disabled `
+    --min-tls-version         TLS1_2 `
     --tags                    @Tags
 
 Write-Output "[OK] Storage Account created: $SAName"
@@ -62,6 +64,17 @@ az webapp create `
     --plan           $AppPlan `
     --runtime        "PYTHON:3.11" `
     --tags           @Tags
+
+# HTTPS only + TLS 1.2 minimum
+az webapp update `
+    --name           "app-$Owner-cli" `
+    --resource-group $RG `
+    --https-only     true
+
+az webapp config set `
+    --name            "app-$Owner-cli" `
+    --resource-group  $RG `
+    --min-tls-version 1.2
 
 # Enable automatic build on deployment
 az webapp config appsettings set `
@@ -85,11 +98,13 @@ $SAFnName = "stfn$($Owner -replace '-', '')"
 $TagsFn   = $Tags + @("purpose=function-storage")
 
 az storage account create `
-    --name           $SAFnName `
-    --resource-group $RG `
-    --location       $Location `
-    --sku            Standard_LRS `
-    --tags           @TagsFn
+    --name                  $SAFnName `
+    --resource-group        $RG `
+    --location              $Location `
+    --sku                   Standard_LRS `
+    --public-network-access Disabled `
+    --min-tls-version       TLS1_2 `
+    --tags                  @TagsFn
 
 az functionapp create `
     --name            "fn-$Owner-cli" `

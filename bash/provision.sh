@@ -37,13 +37,15 @@ echo "▶ [1/5] Storage Account..."
 SA_NAME="st${OWNER//-/}cli"
 
 az storage account create \
-  --name          "$SA_NAME" \
-  --resource-group "$RG" \
-  --location       "$LOCATION" \
-  --sku            Standard_LRS \
-  --kind           StorageV2 \
+  --name                    "$SA_NAME" \
+  --resource-group          "$RG" \
+  --location                "$LOCATION" \
+  --sku                     Standard_LRS \
+  --kind                    StorageV2 \
   --allow-blob-public-access false \
-  --tags           "${TAGS[@]}"
+  --public-network-access   Disabled \
+  --min-tls-version         TLS1_2 \
+  --tags                    "${TAGS[@]}"
 
 echo "✅ Storage Account created: $SA_NAME"
 
@@ -63,6 +65,17 @@ az webapp create \
   --plan           "$APP_PLAN" \
   --runtime        "PYTHON:3.11" \
   --tags           "${TAGS[@]}"
+
+# HTTPS only + TLS 1.2 minimum
+az webapp update \
+  --name           "app-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --https-only     true
+
+az webapp config set \
+  --name            "app-${OWNER}-cli" \
+  --resource-group  "$RG" \
+  --min-tls-version 1.2
 
 # Enable automatic build on deployment
 az webapp config appsettings set \
@@ -86,11 +99,13 @@ SA_FN_NAME="stfn${OWNER//-/}"
 TAGS_FN=("${TAGS[@]}" purpose=function-storage)
 
 az storage account create \
-  --name           "$SA_FN_NAME" \
-  --resource-group "$RG" \
-  --location       "$LOCATION" \
-  --sku            Standard_LRS \
-  --tags           "${TAGS_FN[@]}"
+  --name                  "$SA_FN_NAME" \
+  --resource-group        "$RG" \
+  --location              "$LOCATION" \
+  --sku                   Standard_LRS \
+  --public-network-access Disabled \
+  --min-tls-version       TLS1_2 \
+  --tags                  "${TAGS_FN[@]}"
 
 az functionapp create \
   --name            "fn-${OWNER}-cli" \
