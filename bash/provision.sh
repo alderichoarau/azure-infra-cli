@@ -78,7 +78,7 @@ echo ""
 echo "▶ [3/5] Function App (dedicated Storage + shared plan)..."
 
 # Storage account dedicated to Functions (required — separate from business storage)
-SA_FN_NAME="stfnshared${OWNER//-/}"
+SA_FN_NAME="stfn${OWNER//-/}"
 TAGS_FN="$TAGS purpose=function-storage"
 
 az storage account create \

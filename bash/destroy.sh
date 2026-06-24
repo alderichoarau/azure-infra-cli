@@ -94,7 +94,7 @@ else
   echo "⏭️  $SA_NAME not found — skipped"
 fi
 
-SA_FN_NAME="stfnshared${OWNER//-/}"
+SA_FN_NAME="stfn${OWNER//-/}"
 if az storage account show --name "$SA_FN_NAME" --resource-group "$RG" &>/dev/null; then
   az storage account delete \
     --name           "$SA_FN_NAME" \
