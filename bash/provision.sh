@@ -116,7 +116,7 @@ echo "▶ [4/5] Static Web App..."
 az staticwebapp create \
   --name           "stapp-${OWNER}-cli" \
   --resource-group "$RG" \
-  --location       "$LOCATION"
+  --location       "westeurope"
 # az staticwebapp create does not support --tags, so we tag the resource after creation
 STAPP_ID=$(az staticwebapp show \
   --name           "stapp-${OWNER}-cli" \
