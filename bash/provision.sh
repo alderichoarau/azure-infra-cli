@@ -118,11 +118,15 @@ az staticwebapp create \
   --resource-group "$RG" \
   --location       "$LOCATION"
 # az staticwebapp create does not support --tags, so we tag the resource after creation
-az resource tag \
-  --resource-group  "$RG" \
-  --name            "stapp-${OWNER}-cli" \
-  --resource-type   "Microsoft.Web/staticSites" \
-  --tags            $TAGS
+STAPP_ID=$(az staticwebapp show \
+  --name           "stapp-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --query          "id" -o tsv)
+
+az tag update \
+  --resource-id "$STAPP_ID" \
+  --operation   Merge \
+  --tags        $TAGS
 
 STAPP_URL=$(az staticwebapp show \
   --name           "stapp-${OWNER}-cli" \
