@@ -1,0 +1,170 @@
+#!/bin/bash
+# ──────────────────────────────────────────────────────────────────────────────
+# provision.sh — Create Azure resources via az CLI
+#
+# Resources created:
+#   - Storage Account
+#   - App Service (Plan + Python Web App)
+#   - Function App (Consumption Plan + dedicated Storage + Python Function App)
+#   - Static Web App
+#   - Azure Container Instance (ACI)
+#
+# All resources are tagged managed_by=cli for the Friday cleanup
+# ──────────────────────────────────────────────────────────────────────────────
+
+set -euo pipefail   # stop immediately if a command fails
+
+# ── Variables ─────────────────────────────────────────────────────────────────
+OWNER="${OWNER:-firstname-lastname}"          # injected from GitHub secret or passed as argument
+RG="${RESOURCE_GROUP:-rg-${OWNER}}"           # resource group pre-created by the trainer
+LOCATION="francecentral"
+
+# Tags applied to all resources — used by destroy.sh
+TAGS="managed_by=cli environment=tp owner=${OWNER}"
+
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Azure Provisioning — owner: ${OWNER}"
+echo "  Resource Group : ${RG}"
+echo "  Region         : ${LOCATION}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# ── 1. Business Storage Account ───────────────────────────────────────────────
+echo ""
+echo "▶ [1/6] Storage Account..."
+
+# Azure constraint: 3-24 chars, lowercase letters and digits only
+SA_NAME="st${OWNER//-/}cli"
+
+az storage account create \
+  --name          "$SA_NAME" \
+  --resource-group "$RG" \
+  --location       "$LOCATION" \
+  --sku            Standard_LRS \
+  --kind           StorageV2 \
+  --allow-blob-public-access false \
+  --tags           $TAGS
+
+echo "✅ Storage Account created: $SA_NAME"
+
+# ── 2. App Service Plan + Python Web App ──────────────────────────────────────
+echo ""
+echo "▶ [2/6] App Service Plan..."
+
+az appservice plan create \
+  --name           "plan-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --location       "$LOCATION" \
+  --sku            B1 \
+  --is-linux \
+  --tags           $TAGS
+
+echo "✅ App Service Plan created: plan-${OWNER}-cli"
+
+echo ""
+echo "▶ [3/6] App Service (Python Web App)..."
+
+az webapp create \
+  --name           "app-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --plan           "plan-${OWNER}-cli" \
+  --runtime        "PYTHON:3.11" \
+  --tags           $TAGS
+
+# Enable automatic build on deployment
+az webapp config appsettings set \
+  --name           "app-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --settings       SCM_DO_BUILD_DURING_DEPLOYMENT=true ENVIRONMENT=tp
+
+APP_URL=$(az webapp show \
+  --name           "app-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --query          "defaultHostName" -o tsv)
+
+echo "✅ App Service created: https://${APP_URL}"
+
+# ── 3. Python Function App (serverless Consumption) ───────────────────────────
+echo ""
+echo "▶ [4/6] Function App (dedicated Storage + Consumption plan)..."
+
+# Storage account dedicated to Functions (required — separate from business storage)
+SA_FN_NAME="stfn${OWNER//-/}cli"
+
+az storage account create \
+  --name           "$SA_FN_NAME" \
+  --resource-group "$RG" \
+  --location       "$LOCATION" \
+  --sku            Standard_LRS \
+  --tags           $TAGS
+
+# Create the Function App in Consumption mode (serverless, pay-per-use)
+az functionapp create \
+  --name                     "fn-${OWNER}-cli" \
+  --resource-group           "$RG" \
+  --storage-account          "$SA_FN_NAME" \
+  --consumption-plan-location "$LOCATION" \
+  --runtime                  python \
+  --runtime-version          3.11 \
+  --os-type                  Linux \
+  --tags                     $TAGS
+
+FN_URL=$(az functionapp show \
+  --name           "fn-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --query          "defaultHostName" -o tsv)
+
+echo "✅ Function App created: https://${FN_URL}"
+
+# ── 4. Static Web App ─────────────────────────────────────────────────────────
+echo ""
+echo "▶ [5/6] Static Web App..."
+
+az staticwebapp create \
+  --name           "stapp-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --location       "westeurope" \
+  --tags           $TAGS
+
+# Note: Static Web App is not available in francecentral → westeurope
+
+STAPP_URL=$(az staticwebapp show \
+  --name           "stapp-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --query          "defaultHostname" -o tsv)
+
+echo "✅ Static Web App created: https://${STAPP_URL}"
+
+# ── 5. Azure Container Instance (ACI) ─────────────────────────────────────────
+echo ""
+echo "▶ [6/6] Azure Container Instance (nginx)..."
+
+az container create \
+  --name           "aci-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --image          "nginx:latest" \
+  --cpu            0.5 \
+  --memory         0.5 \
+  --ports          80 \
+  --ip-address     Public \
+  --dns-name-label "aci-${OWNER}-cli" \
+  --environment-variables OWNER="${OWNER}" ENVIRONMENT="tp" \
+  --tags           $TAGS
+
+ACI_FQDN=$(az container show \
+  --name           "aci-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --query          "ipAddress.fqdn" -o tsv)
+
+echo "✅ Container ACI created: http://${ACI_FQDN}"
+
+# ── Summary ───────────────────────────────────────────────────────────────────
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  ✅ Provisioning complete"
+echo ""
+echo "  Storage Account  : $SA_NAME"
+echo "  App Service      : https://${APP_URL}"
+echo "  Function App     : https://${FN_URL}"
+echo "  Static Web App   : https://${STAPP_URL}"
+echo "  Container ACI    : http://${ACI_FQDN}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

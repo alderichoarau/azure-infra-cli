@@ -1,0 +1,48 @@
+name: Friday Evening Cleanup
+
+on:
+  schedule:
+    - cron: '0 18 * * 5'   # Friday 18:00 UTC = 20:00 Paris (summer time)
+  workflow_dispatch:         # manual trigger if needed
+    inputs:
+      owner:
+        description: "Your firstname-lastname (e.g. alderic-hoarau) — leave empty to use the secret"
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  OWNER:          ${{ github.event.inputs.owner || secrets.AZURE_OWNER }}
+  RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+
+jobs:
+  cleanup:
+    name: Delete CLI resources
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v3
+        with:
+          client-id:       ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:       ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Delete resources tagged managed_by=cli
+        run: bash bash/destroy.sh
+
+      - name: Cleanup summary
+        if: always()
+        run: |
+          echo "## Friday Evening Cleanup" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Owner** : $OWNER" >> $GITHUB_STEP_SUMMARY
+          echo "- **Resource Group** : $RESOURCE_GROUP" >> $GITHUB_STEP_SUMMARY
+          echo "- **Target tag** : \`managed_by=cli\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Terraform resources** : not affected (\`managed_by=terraform\`)" >> $GITHUB_STEP_SUMMARY
