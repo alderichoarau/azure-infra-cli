@@ -151,23 +151,29 @@ az container create `
     --os-type        Linux `
     --environment-variables OWNER="$Owner" ENVIRONMENT="tp"
 
-# az container create does not support --tags, so we tag the resource after creation
-$AciId = az container show `
-    --name           "aci-$Owner-cli" `
-    --resource-group $RG `
-    --query          "id" -o tsv
+# Verify the container was actually created (az container create can return 0 on Docker Hub rate limit errors)
+az container show --name "aci-$Owner-cli" --resource-group $RG *>$null
+if ($LASTEXITCODE -eq 0) {
+    $AciId = az container show `
+        --name           "aci-$Owner-cli" `
+        --resource-group $RG `
+        --query          "id" -o tsv
 
-az tag update `
-    --resource-id $AciId `
-    --operation   Merge `
-    --tags        @Tags
+    az tag update `
+        --resource-id $AciId `
+        --operation   Merge `
+        --tags        @Tags
 
-$AciFqdn = az container show `
-    --name           "aci-$Owner-cli" `
-    --resource-group $RG `
-    --query          "ipAddress.fqdn" -o tsv
+    $AciFqdn = az container show `
+        --name           "aci-$Owner-cli" `
+        --resource-group $RG `
+        --query          "ipAddress.fqdn" -o tsv
 
-Write-Output "[OK] Container ACI created: http://$AciFqdn"
+    Write-Output "[OK] Container ACI created: http://$AciFqdn"
+} else {
+    Write-Output "[WARNING] Container ACI creation failed (Docker Hub rate limit?) -- retry manually"
+    $AciFqdn = "N/A"
+}
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 Write-Output ""
