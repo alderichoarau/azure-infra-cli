@@ -49,8 +49,7 @@ echo "▶ Deleting Application Insights..."
 if az monitor app-insights component show --app "fn-${OWNER}-cli" --resource-group "$RG" &>/dev/null; then
   az monitor app-insights component delete \
     --app            "fn-${OWNER}-cli" \
-    --resource-group "$RG" \
-    --yes
+    --resource-group "$RG"
   echo "✅ Application Insights deleted"
 else
   echo "⏭️  Application Insights not found — skipped"

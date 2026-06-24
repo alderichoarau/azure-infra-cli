@@ -50,8 +50,7 @@ az monitor app-insights component show --app "fn-$Owner-cli" --resource-group $R
 if ($LASTEXITCODE -eq 0) {
     az monitor app-insights component delete `
         --app            "fn-$Owner-cli" `
-        --resource-group $RG `
-        --yes
+        --resource-group $RG
     Write-Output "[OK] Application Insights deleted"
 } else {
     Write-Output "[SKIP] Application Insights not found"
