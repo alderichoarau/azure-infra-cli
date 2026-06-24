@@ -99,12 +99,13 @@ SA_FN_NAME="stfn${OWNER//-/}"
 TAGS_FN=("${TAGS[@]}" purpose=function-storage)
 
 az storage account create \
-  --name            "$SA_FN_NAME" \
-  --resource-group  "$RG" \
-  --location        "$LOCATION" \
-  --sku             Standard_LRS \
-  --min-tls-version TLS1_2 \
-  --tags            "${TAGS_FN[@]}"
+  --name                  "$SA_FN_NAME" \
+  --resource-group        "$RG" \
+  --location              "$LOCATION" \
+  --sku                   Standard_LRS \
+  --public-network-access Enabled \
+  --min-tls-version       TLS1_2 \
+  --tags                  "${TAGS_FN[@]}"
 
 az functionapp create \
   --name            "fn-${OWNER}-cli" \
