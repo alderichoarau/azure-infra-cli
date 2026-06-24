@@ -148,8 +148,18 @@ az container create \
   --ports          80 \
   --ip-address     Public \
   --dns-name-label "aci-${OWNER}-cli" \
-  --environment-variables OWNER="${OWNER}" ENVIRONMENT="tp" \
-  --tags           "${TAGS[@]}"
+  --environment-variables OWNER="${OWNER}" ENVIRONMENT="tp"
+
+# az container create does not support --tags, so we tag the resource after creation
+ACI_ID=$(az container show \
+  --name           "aci-${OWNER}-cli" \
+  --resource-group "$RG" \
+  --query          "id" -o tsv)
+
+az tag update \
+  --resource-id "$ACI_ID" \
+  --operation   Merge \
+  --tags        "${TAGS[@]}"
 
 ACI_FQDN=$(az container show \
   --name           "aci-${OWNER}-cli" \
