@@ -1,5 +1,7 @@
 # azure-infra-cli
 
+[![CI](https://github.com/alderichoarau/azure-infra-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/alderichoarau/azure-infra-cli/actions/workflows/ci.yml) [![Dependabot Updates](https://github.com/alderichoarau/azure-infra-cli/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/alderichoarau/azure-infra-cli/actions/workflows/dependabot/dependabot-updates)
+
 > Provisioning Azure infrastructure with az CLI — Bash scripts with GitHub Actions automation
 
 ---
