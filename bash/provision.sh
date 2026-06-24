@@ -5,7 +5,7 @@
 # Resources created:
 #   - Storage Account
 #   - App Service (Python Web App — uses shared plan plan-npr-prf2026)
-#   - Function App (Consumption Plan + dedicated Storage + Python Function App)
+#   - Function App (dedicated Storage + Python Function App on plan-npr-prf2026)
 #   - Static Web App
 #   - Azure Container Instance (ACI)
 #
@@ -73,30 +73,30 @@ APP_URL=$(az webapp show \
 
 echo "✅ App Service created: https://${APP_URL}"
 
-# ── 3. Python Function App (serverless Consumption) ───────────────────────────
+# ── 3. Python Function App ────────────────────────────────────────────────────
 echo ""
-echo "▶ [3/5] Function App (dedicated Storage + Consumption plan)..."
+echo "▶ [3/5] Function App (dedicated Storage + shared plan)..."
 
 # Storage account dedicated to Functions (required — separate from business storage)
-SA_FN_NAME="stfn${OWNER//-/}cli"
+SA_FN_NAME="stfnshared${OWNER//-/}"
+TAGS_FN="$TAGS purpose=function-storage"
 
 az storage account create \
   --name           "$SA_FN_NAME" \
   --resource-group "$RG" \
   --location       "$LOCATION" \
   --sku            Standard_LRS \
-  --tags           $TAGS
+  --tags           $TAGS_FN
 
-# Create the Function App in Consumption mode (serverless, pay-per-use)
 az functionapp create \
-  --name                     "fn-${OWNER}-cli" \
-  --resource-group           "$RG" \
-  --storage-account          "$SA_FN_NAME" \
-  --consumption-plan-location "$LOCATION" \
-  --runtime                  python \
-  --runtime-version          3.11 \
-  --os-type                  Linux \
-  --tags                     $TAGS
+  --name            "fn-${OWNER}-cli" \
+  --resource-group  "$RG" \
+  --storage-account "$SA_FN_NAME" \
+  --plan            "$APP_PLAN" \
+  --runtime         python \
+  --runtime-version 3.11 \
+  --os-type         Linux \
+  --tags            $TAGS
 
 FN_URL=$(az functionapp show \
   --name           "fn-${OWNER}-cli" \
