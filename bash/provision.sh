@@ -195,7 +195,7 @@ else
   ACI_FQDN="N/A"
 fi
 
-# ── 6. Blob containers — TP Module 3 correction ───────────────────────────────
+# ── 6. Blob containers ───────────────────────────────
 echo ""
 echo "▶ [6/7] Blob containers (private: api-logs / public: api-config)..."
 
@@ -240,7 +240,7 @@ CONFIG_URL=$(az storage blob url \
 echo "✅ Containers created: api-logs (private) / api-config (public)"
 echo "   config.json public URL: $CONFIG_URL"
 
-# ── 7. Network — VNet + Subnets + NSG — TP Module 4 correction ───────────────
+# ── 7. Network — VNet + Subnets + NSG ───────────────
 echo ""
 echo "▶ [7/7] Network (VNet + subnets + NSG)..."
 
