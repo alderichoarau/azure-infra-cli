@@ -4,18 +4,26 @@
 #
 # ⚠️  Does NOT delete the Resource Group — only CLI-managed resources
 # ⚠️  Terraform resources (managed_by=terraform) are never touched
+# ⚠️  App Service Plan is NOT deleted (shared plan in rg-shared-prf2026)
 #
 # Deletion order matters (Azure dependencies):
-#   1. Apps (webapp, functionapp, container, staticwebapp)  ← child resources
-#   2. Storage Accounts                                     ← independent
-#
-# Note: App Service Plan is intentionally NOT deleted
+#   1. Apps (functionapp, webapp, container, staticwebapp)  ← child resources first
+#   2. Application Insights                                 ← auto-created with Function App
+#   3. Blob containers (api-logs, api-config)               ← TP Module 3 — before storage
+#   4. Network (NSG disassoc → NSG → NIC → VNet)           ← TP Module 4 — before storage
+#   5. Storage Accounts                                     ← last (nothing depends on them)
 # ──────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
 OWNER="${OWNER:-firstname-lastname}"
 RG="${RESOURCE_GROUP:-rg-${OWNER}}"
+
+SA_NAME="st${OWNER//-/}cli"
+SA_FN_NAME="stfn${OWNER//-/}"
+VNET_NAME="vnet-${OWNER}-cli"
+NSG_NAME="nsg-frontend-${OWNER}-cli"
+NIC_NAME="nic-test-${OWNER}-cli"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  🗑️  Azure Cleanup — owner: ${OWNER}"
@@ -90,21 +98,83 @@ else
   echo "⏭️  Static Web App not found — skipped"
 fi
 
-# ── 5. Storage Accounts ───────────────────────────────────────────────────────
-echo "▶ Deleting Storage Accounts..."
-
-SA_NAME="st${OWNER//-/}cli"
+# ── 5. Blob containers — TP Module 3 correction ───────────────────────────────
+# Must be done before deleting the storage account
+echo "▶ Deleting Blob containers..."
 if az storage account show --name "$SA_NAME" --resource-group "$RG" &>/dev/null; then
-  az storage account delete \
+  AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string \
     --name           "$SA_NAME" \
     --resource-group "$RG" \
-    --yes
-  echo "✅ Storage Account deleted: $SA_NAME"
+    --query          connectionString \
+    --output         tsv)
+  export AZURE_STORAGE_CONNECTION_STRING
+
+  for CONTAINER in api-logs api-config; do
+    if az storage container exists --name "$CONTAINER" --query exists -o tsv 2>/dev/null | grep -q true; then
+      az storage container delete --name "$CONTAINER" --timeout 30
+      echo "✅ Container deleted: $CONTAINER"
+    else
+      echo "⏭️  Container not found: $CONTAINER — skipped"
+    fi
+  done
 else
-  echo "⏭️  $SA_NAME not found — skipped"
+  echo "⏭️  Storage Account not found — containers already gone"
 fi
 
-SA_FN_NAME="stfn${OWNER//-/}"
+# ── 6. Network — TP Module 4 correction ──────────────────────────────────────
+# NSG must be disassociated from subnet before deletion
+echo "▶ Deleting Network resources (NSG → NIC → VNet)..."
+
+# 6a. Disassociate NSG from subnet-frontend first
+if az network vnet subnet show \
+    --name "subnet-frontend" --vnet-name "$VNET_NAME" \
+    --resource-group "$RG" &>/dev/null; then
+  NSG_ASSOC=$(az network vnet subnet show \
+    --name "subnet-frontend" --vnet-name "$VNET_NAME" \
+    --resource-group "$RG" \
+    --query "networkSecurityGroup.id" -o tsv 2>/dev/null || echo "")
+  if [ -n "$NSG_ASSOC" ] && [ "$NSG_ASSOC" != "null" ]; then
+    az network vnet subnet update \
+      --name "subnet-frontend" --vnet-name "$VNET_NAME" \
+      --resource-group "$RG" \
+      --network-security-group ""
+    echo "   NSG disassociated from subnet-frontend"
+  fi
+fi
+
+# 6b. Delete NSG
+if az network nsg show --name "$NSG_NAME" --resource-group "$RG" &>/dev/null; then
+  az network nsg delete \
+    --name           "$NSG_NAME" \
+    --resource-group "$RG"
+  echo "✅ NSG deleted: $NSG_NAME"
+else
+  echo "⏭️  NSG not found — skipped"
+fi
+
+# 6c. Delete test NIC (if it exists)
+if az network nic show --name "$NIC_NAME" --resource-group "$RG" &>/dev/null; then
+  az network nic delete \
+    --name           "$NIC_NAME" \
+    --resource-group "$RG"
+  echo "✅ NIC deleted: $NIC_NAME"
+else
+  echo "⏭️  NIC not found — skipped"
+fi
+
+# 6d. Delete VNet (also deletes all subnets)
+if az network vnet show --name "$VNET_NAME" --resource-group "$RG" &>/dev/null; then
+  az network vnet delete \
+    --name           "$VNET_NAME" \
+    --resource-group "$RG"
+  echo "✅ VNet deleted: $VNET_NAME (subnets included)"
+else
+  echo "⏭️  VNet not found — skipped"
+fi
+
+# ── 7. Storage Accounts ───────────────────────────────────────────────────────
+echo "▶ Deleting Storage Accounts..."
+
 if az storage account show --name "$SA_FN_NAME" --resource-group "$RG" &>/dev/null; then
   az storage account delete \
     --name           "$SA_FN_NAME" \
@@ -113,6 +183,16 @@ if az storage account show --name "$SA_FN_NAME" --resource-group "$RG" &>/dev/nu
   echo "✅ Function Storage Account deleted: $SA_FN_NAME"
 else
   echo "⏭️  $SA_FN_NAME not found — skipped"
+fi
+
+if az storage account show --name "$SA_NAME" --resource-group "$RG" &>/dev/null; then
+  az storage account delete \
+    --name           "$SA_NAME" \
+    --resource-group "$RG" \
+    --yes
+  echo "✅ Business Storage Account deleted: $SA_NAME"
+else
+  echo "⏭️  $SA_NAME not found — skipped"
 fi
 
 # ── Final check ───────────────────────────────────────────────────────────────
@@ -135,5 +215,6 @@ fi
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  ✅ Cleanup complete — Resource Group preserved"
+echo "  App Service Plan preserved (shared — rg-shared-prf2026)"
 echo "  Terraform resources were not affected"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
