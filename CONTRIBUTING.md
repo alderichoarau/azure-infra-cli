@@ -5,12 +5,26 @@
 ```bash
 git clone https://github.com/alderichoarau/azure-infra-cli.git
 cd azure-infra-cli
+git config core.hooksPath .githooks   # enable pre-commit hook
 az login
 ```
 
+## Pre-commit hook
+
+The hook (`.githooks/pre-commit`) mirrors the CI checks locally — it runs automatically before each commit once enabled with `git config core.hooksPath .githooks`.
+
+| Check | Tool | Install |
+| --- | --- | --- |
+| Secrets scan | gitleaks | `brew install gitleaks` |
+| Bash lint | shellcheck | `brew install shellcheck` |
+| Workflow lint | actionlint | `brew install actionlint` |
+| PowerShell lint | PSScriptAnalyzer | requires `pwsh` |
+
+Missing tools are skipped with a warning — only staged files are checked.
+
 ## Project structure
 
-```
+```text
 azure-infra-cli/
 ├── bash/
 │   ├── provision.sh     # creates all resources with tags
@@ -28,6 +42,7 @@ azure-infra-cli/
 ## Testing locally
 
 **Bash:**
+
 ```bash
 export OWNER="firstname-lastname"
 export RESOURCE_GROUP="rg-firstname-lastname"
@@ -36,6 +51,7 @@ bash bash/provision.sh
 ```
 
 **PowerShell:**
+
 ```powershell
 $env:OWNER = "firstname-lastname"
 $env:RESOURCE_GROUP = "rg-firstname-lastname"
@@ -48,7 +64,7 @@ pwsh powershell/provision.ps1
 This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 
 | Prefix | Use case |
-|--------|----------|
+| ------ | -------- |
 | `feat:` | New resource or feature |
 | `fix:` | Bug fix |
 | `ci:` | CI/CD changes |
@@ -57,7 +73,8 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/):
 | `refactor:` | Refactoring without behavior change |
 
 Examples:
-```
+
+```text
 feat: add Key Vault provisioning
 fix: use az tag update for Static Web App
 ci: add PSScriptAnalyzer job

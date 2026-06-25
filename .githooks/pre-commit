@@ -1,0 +1,104 @@
+#!/bin/bash
+# Pre-commit hook — mirrors the CI checks (ci.yml)
+# Enable: git config core.hooksPath .githooks
+
+set -euo pipefail
+
+PASS=0
+FAIL=0
+
+_ok()   { echo "  [OK]   $1"; }
+_skip() { echo "  [SKIP] $1"; }
+_err()  { echo "  [FAIL] $1"; FAIL=$((FAIL + 1)); }
+
+echo "──────────────────────────────────────────"
+echo "  Pre-commit checks"
+echo "──────────────────────────────────────────"
+
+# ── 1. Gitleaks ───────────────────────────────
+echo ""
+echo "▶ Gitleaks (secrets scan)..."
+if command -v gitleaks &>/dev/null; then
+  if gitleaks protect --staged --verbose; then
+    _ok "No secrets detected"
+    PASS=$((PASS + 1))
+  else
+    _err "Secrets detected — commit blocked"
+  fi
+else
+  _skip "gitleaks not installed  →  brew install gitleaks"
+fi
+
+# ── 2. ShellCheck ─────────────────────────────
+echo ""
+echo "▶ ShellCheck (bash scripts)..."
+if command -v shellcheck &>/dev/null; then
+  STAGED_SH=$(git diff --cached --name-only --diff-filter=ACM | grep '\.sh$' || true)
+  if [ -z "$STAGED_SH" ]; then
+    _skip "No .sh files staged"
+  else
+    ERROR=0
+    while IFS= read -r f; do
+      shellcheck "$f" || ERROR=1
+    done <<< "$STAGED_SH"
+    if [ "$ERROR" -eq 0 ]; then
+      _ok "ShellCheck passed"
+      PASS=$((PASS + 1))
+    else
+      _err "ShellCheck found issues"
+    fi
+  fi
+else
+  _skip "shellcheck not installed  →  brew install shellcheck"
+fi
+
+# ── 3. Actionlint ─────────────────────────────
+echo ""
+echo "▶ Actionlint (GitHub Actions workflows)..."
+if command -v actionlint &>/dev/null; then
+  STAGED_WORKFLOWS=$(git diff --cached --name-only --diff-filter=ACM | grep '^\.github/workflows/.*\.ya\?ml$' || true)
+  if [ -z "$STAGED_WORKFLOWS" ]; then
+    _skip "No workflow files staged"
+  else
+    if actionlint -color; then
+      _ok "Actionlint passed"
+      PASS=$((PASS + 1))
+    else
+      _err "Actionlint found issues"
+    fi
+  fi
+else
+  _skip "actionlint not installed  →  brew install actionlint"
+fi
+
+# ── 4. PSScriptAnalyzer ───────────────────────
+echo ""
+echo "▶ PSScriptAnalyzer (PowerShell scripts)..."
+if command -v pwsh &>/dev/null; then
+  STAGED_PS1=$(git diff --cached --name-only --diff-filter=ACM | grep '\.ps1$' || true)
+  if [ -z "$STAGED_PS1" ]; then
+    _skip "No .ps1 files staged"
+  else
+    pwsh -NoProfile -Command "
+      Install-Module PSScriptAnalyzer -Force -Scope CurrentUser -ErrorAction SilentlyContinue | Out-Null
+      \$results = Invoke-ScriptAnalyzer -Path './powershell' -Recurse -Severity Error,Warning
+      if (\$results) { \$results | Format-Table -AutoSize; exit 1 }
+      Write-Host '  [OK]   PSScriptAnalyzer passed'
+    " || { _err "PSScriptAnalyzer found issues"; }
+    PASS=$((PASS + 1))
+  fi
+else
+  _skip "pwsh not installed  →  brew install --cask powershell"
+fi
+
+# ── Summary ───────────────────────────────────
+echo ""
+echo "──────────────────────────────────────────"
+if [ "$FAIL" -gt 0 ]; then
+  echo "  $FAIL check(s) failed — commit blocked"
+  echo "──────────────────────────────────────────"
+  exit 1
+else
+  echo "  All checks passed"
+  echo "──────────────────────────────────────────"
+fi
