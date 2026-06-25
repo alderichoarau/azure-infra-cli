@@ -7,7 +7,7 @@ on:
   workflow_dispatch:         # manual trigger if needed
     inputs:
       resource_group:
-        description: "Your resource group name (e.g. rg-alderic-hoarau) — leave empty to use the secret"
+        description: "Your resource group name (e.g. rg-alderic-hoarau) — leave empty to use the vars.AZURE_RESOURCE_GROUP value"
         required: false
         type: string
       shell:
@@ -22,7 +22,7 @@ on:
 permissions: {}
 
 env:
-  RESOURCE_GROUP: ${{ github.event.inputs.resource_group || secrets.AZURE_RESOURCE_GROUP }}
+  RESOURCE_GROUP: ${{ github.event.inputs.resource_group || vars.AZURE_RESOURCE_GROUP }}
 
 jobs:
   cleanup:

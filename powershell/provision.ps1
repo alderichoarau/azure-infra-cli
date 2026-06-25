@@ -16,10 +16,11 @@
 $ErrorActionPreference = "Stop"
 
 # -- Variables -----------------------------------------------------------------
-$Owner    = if ($env:OWNER) { $env:OWNER } else { "firstname-lastname" }
-$RG       = if ($env:RESOURCE_GROUP) { $env:RESOURCE_GROUP } else { "rg-$Owner" }
-$RGShared = "rg-shared-prf2026"
-$Location = "francecentral"
+$Owner       = if ($env:OWNER) { $env:OWNER } else { "firstname-lastname" }
+$RG          = if ($env:RESOURCE_GROUP) { $env:RESOURCE_GROUP } else { "rg-$Owner" }
+$RGShared    = if ($env:RG_SHARED) { $env:RG_SHARED } else { "rg-shared-prf2026" }
+$AppPlanName = if ($env:APP_PLAN_NAME) { $env:APP_PLAN_NAME } else { "plan-npr-prf2026" }
+$Location    = "francecentral"
 
 # Tags applied to all resources - used by destroy.ps1
 $Tags = @("managed_by=cli", "environment=tp", "owner=$Owner")
@@ -56,7 +57,7 @@ Write-Output "[OK] Storage Account created: $SAName"
 # -- 2. App Service (Python Web App) -------------------------------------------
 # Resolve the full resource ID of the shared plan (lives in a different resource group)
 $AppPlan = az appservice plan show `
-    --name           "plan-npr-prf2026" `
+    --name           $AppPlanName `
     --resource-group $RGShared `
     --query          "id" -o tsv
 

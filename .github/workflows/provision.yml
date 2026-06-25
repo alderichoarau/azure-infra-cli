@@ -22,6 +22,8 @@ permissions: {}
 env:
   ARM_USE_OIDC:   "true"
   RESOURCE_GROUP: ${{ github.event.inputs.resource_group }}
+  RG_SHARED:      ${{ vars.RG_SHARED || 'rg-shared-prf2026' }}
+  APP_PLAN_NAME:  ${{ vars.APP_PLAN_NAME || 'plan-npr-prf2026' }}
 
 jobs:
   provision:

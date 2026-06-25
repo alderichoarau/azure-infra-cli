@@ -19,7 +19,8 @@ set -euo pipefail   # stop immediately if a command fails
 # ── Variables ─────────────────────────────────────────────────────────────────
 OWNER="${OWNER:-firstname-lastname}"          # injected from GitHub secret or passed as argument
 RG="${RESOURCE_GROUP:-rg-${OWNER}}"           # resource group pre-created by the trainer
-RG_SHARED="rg-shared-prf2026"                 # shared resource group hosting the App Service Plan
+RG_SHARED="${RG_SHARED:-rg-shared-prf2026}"   # shared resource group hosting the App Service Plan
+APP_PLAN_NAME="${APP_PLAN_NAME:-plan-npr-prf2026}"
 LOCATION="francecentral"
 
 # Tags applied to all resources — used by destroy.sh
@@ -57,7 +58,7 @@ echo "✅ Storage Account created: $SA_NAME"
 # ── 2. App Service (Python Web App) ───────────────────────────────────────────
 # Resolve the full resource ID of the shared plan (lives in a different resource group)
 APP_PLAN=$(az appservice plan show \
-  --name           "plan-npr-prf2026" \
+  --name           "$APP_PLAN_NAME" \
   --resource-group "$RG_SHARED" \
   --query          "id" -o tsv)
 
