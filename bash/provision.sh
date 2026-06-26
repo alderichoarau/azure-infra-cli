@@ -327,6 +327,33 @@ az network vnet subnet update \
 
 echo "✅ NSG created and associated to subnet-frontend (HTTP:100 / HTTPS:110 / Deny:4000)"
 
+# ── 7b. Effective NSG rules (Partie 4 TP) ────────────────────────────────────
+echo ""
+echo "▶ [7b] NIC de test + règles effectives (TP Module 4 — Partie 4)..."
+
+NIC_NAME="nic-test-${OWNER}-cli"
+
+# Create a standalone NIC in subnet-frontend (no VM required)
+az network nic create \
+  --name           "$NIC_NAME" \
+  --resource-group "$RG" \
+  --location       "$LOCATION" \
+  --vnet-name      "$VNET_NAME" \
+  --subnet         "subnet-frontend" \
+  --tags           "${TAGS[@]}"
+
+echo ""
+echo "── Règles de sécurité effectives sur $NIC_NAME ──────────────────────────"
+az network nic list-effective-nsg \
+  --name           "$NIC_NAME" \
+  --resource-group "$RG" \
+  --query "effectiveNetworkSecurityGroups[0].effectiveSecurityRules[].{Nom:name, Priorite:priority, Direction:direction, Action:access, Port:destinationPortRanges}" \
+  --output table
+
+echo ""
+echo "✅ NIC de test créée : $NIC_NAME"
+echo "   (vue consolidée : vos règles + règles par défaut Azure dans l'ordre d'application)"
+
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
