@@ -330,10 +330,15 @@ echo "✅ NSG created and associated to subnet-frontend (HTTP:100 / HTTPS:110 / 
 # ── 7b. Effective NSG rules (Partie 4 TP) ────────────────────────────────────
 echo ""
 echo "▶ [7b] NIC de test + règles effectives (TP Module 4 — Partie 4)..."
+echo ""
+echo "   Contexte : un NSG (Network Security Group) peut être associé à un subnet"
+echo "   ou directement à une NIC. Azure fusionne ces deux niveaux de règles pour"
+echo "   calculer les règles 'effectives' réellement appliquées au trafic."
+echo "   On crée ici une NIC attachée à subnet-frontend (qui porte déjà le NSG)"
+echo "   pour illustrer ce que verrait une VM déployée dans ce subnet."
 
 NIC_NAME="nic-test-${OWNER}-cli"
 
-# Create a standalone NIC in subnet-frontend (no VM required)
 az network nic create \
   --name           "$NIC_NAME" \
   --resource-group "$RG" \
@@ -344,15 +349,26 @@ az network nic create \
 
 echo ""
 echo "── Règles de sécurité effectives sur $NIC_NAME ──────────────────────────"
-az network nic list-effective-nsg \
+echo "   (commande : az network nic list-effective-nsg)"
+echo "   Cette commande retourne la vue consolidée : règles NSG subnet + règles"
+echo "   NSG NIC + règles par défaut Azure, triées par priorité d'application."
+if ! az network nic list-effective-nsg \
   --name           "$NIC_NAME" \
   --resource-group "$RG" \
   --query "effectiveNetworkSecurityGroups[0].effectiveSecurityRules[].{Nom:name, Priorite:priority, Direction:direction, Action:access, Port:destinationPortRanges}" \
-  --output table
+  --output table 2>/dev/null; then
+  echo "⚠️  list-effective-nsg requiert une VM active attachée à la NIC."
+  echo "   Fallback : affichage des règles NSG configurées sur le subnet :"
+  az network nsg rule list \
+    --resource-group "$RG" \
+    --nsg-name       "$NSG_NAME" \
+    --query "[].{Nom:name, Priorite:priority, Direction:direction, Action:access, Port:destinationPortRange}" \
+    --output table
+fi
 
 echo ""
 echo "✅ NIC de test créée : $NIC_NAME"
-echo "   (vue consolidée : vos règles + règles par défaut Azure dans l'ordre d'application)"
+echo "   (règles effectives disponibles uniquement sur une NIC attachée à une VM active)"
 
 # ── Summary ───────────────────────────────────────────────────────────────────
 echo ""
